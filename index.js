@@ -51,8 +51,11 @@ const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
     const res = await axios.get(pokemon.url);
     const types = res.data.types.map((type) => type.type.name);
     
-    // If there are any selected types and the Pokemon is not of one of those types, do not display it
-    if (selectedTypes.length === 0 || types.some(type => selectedTypes.includes(type))) {
+    // Create a new array that contains only the types that also exist in selectedTypes
+    const matchingTypes = types.filter(type => selectedTypes.includes(type));
+
+    // If there are any selected types and the Pokemon has all of the selected types, add it to filteredPokemons
+    if (selectedTypes.length === 0 || matchingTypes.length === selectedTypes.length) {
       filteredPokemons.push(pokemon);
     }
   }
