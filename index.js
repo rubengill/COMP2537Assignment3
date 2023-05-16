@@ -40,13 +40,31 @@ const updatePaginationDiv = (currentPage, numPages) => {
 
 
 const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
-  selected_pokemons = pokemons.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  // Get the selected types from the UI
+  const selectedTypes = $('input[type=checkbox]:checked').map(function() {
+    return this.name;
+  }).get();
 
+  // Filter pokemons based on selected types
+  let filteredPokemons = [];
+  for (let pokemon of pokemons) {
+    const res = await axios.get(pokemon.url);
+    const types = res.data.types.map((type) => type.type.name);
+    
+    // If there are any selected types and the Pokemon is not of one of those types, do not display it
+    if (selectedTypes.length === 0 || types.some(type => selectedTypes.includes(type))) {
+      filteredPokemons.push(pokemon);
+    }
+  }
+
+  // Then paginate as before
+  selected_pokemons = filteredPokemons.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  
   $('#pokeCards').empty()
   selected_pokemons.forEach(async (pokemon) => {
     const res = await axios.get(pokemon.url)
     $('#pokeCards').append(`
-      <div class="pokeCard card" pokeName=${res.data.name}   >
+      <div class="pokeCard card" pokeName=${res.data.name}>
         <h3>${res.data.name.toUpperCase()}</h3> 
         <img src="${res.data.sprites.front_default}" alt="${res.data.name}"/>
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pokeModal">
@@ -54,11 +72,16 @@ const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
         </button>
         </div>  
         `)
-    $('#total-pokemon').text(pokemons.length);
+    $('#total-pokemon').text(filteredPokemons.length);
     $('#displayed-pokemon').text(selected_pokemons.length);
-
   })
 }
+
+const fetchTypes = async () => {
+  const res = await axios.get('https://pokeapi.co/api/v2/type');
+  return res.data.results;
+};
+
 
 const setup = async () => {
   // test out poke api using axios here
@@ -70,6 +93,16 @@ const setup = async () => {
   paginate(currentPage, PAGE_SIZE, pokemons)
   const numPages = Math.ceil(pokemons.length / PAGE_SIZE)
   updatePaginationDiv(currentPage, numPages)
+
+  const types = await fetchTypes();
+  types.forEach(type => {
+    $('#types').append(`
+      <span class="checkbox-inline">
+        <input type="checkbox" id="${type.name}" name="${type.name}">
+        <label for="${type.name}">${type.name}</label>
+      </span>
+    `);
+  });
 
   // pop up modal when clicking on a pokemon card
   // add event listener to each pokemon card
