@@ -104,6 +104,13 @@ const setup = async () => {
     `);
   });
 
+   // add event listener to checkbox changes
+   $('body').on('change', "input[type=checkbox]", function (e) {
+    paginate(currentPage, PAGE_SIZE, pokemons);
+    const numPages = Math.ceil(pokemons.length / PAGE_SIZE);
+    updatePaginationDiv(currentPage, numPages);
+  });
+
   // pop up modal when clicking on a pokemon card
   // add event listener to each pokemon card
   $('body').on('click', '.pokeCard', async function (e) {
